@@ -39,9 +39,10 @@ public class ExpressionParser {
         }
 
         Stack<Expression> operands = new LinkedStack<>();
-        Stack<Character> operators = new LinkedStack<>(); // invariant: contains only '(', '+', and '*'
+        Stack<Character> operators = new LinkedStack<>(); // invariant: contains only '(', '+', '-', '*', and '~'
         boolean expectingOperator = false; // in infix notation, the first operand comes before an operator
         boolean foundAnyOperand = false; // expression must have digit or variable or else essentially empty
+        boolean lastOperandWasVariable = false; // tracks whether the most recently pushed operand was a Variable
 
         for (int i = 0; i < expr.length(); i++) {
             char c = expr.charAt(i);
@@ -74,6 +75,7 @@ public class ExpressionParser {
                     throw new MalformedExpression("Mismatched parentheses, extra ')'");
                 }
                 operators.pop(); // remove '('
+                lastOperandWasVariable = false; // a parenthesized expression is not a single variable
             } else if (c == '-' && !expectingOperator) {
                 //push special ~ to express unary negation for oneStepSimplify()
                 operators.push('~');
@@ -130,14 +132,22 @@ public class ExpressionParser {
                 operands.push(new Constant(value));
                 foundAnyOperand = true;
                 expectingOperator = true;
+                lastOperandWasVariable = false;
             } else if (c >= 'a' && c <= 'z') {
                 if (expectingOperator) {
-                    // catch multi-character variable names
-                    throw new MalformedExpression("Multi-character variable names not allowed: '" + c + "'");
+                    // distinguish multi-character variable names from a simple missing operator
+                    if (lastOperandWasVariable) {
+                        throw new MalformedExpression(
+                                "Multi-character variable names not allowed: '" + c + "'");
+                    } else {
+                        throw new MalformedExpression(
+                                "Expected operator, got variable '" + c + "'");
+                    }
                 }
                 operands.push(new Variable(c));
                 foundAnyOperand = true;
                 expectingOperator = true;
+                lastOperandWasVariable = true;
             }
         }
 
@@ -160,10 +170,14 @@ public class ExpressionParser {
 
     /**
      * Helper method that partially simplifies the expression by `pop()`ping one operator from the
-     * `operators` stack, `pop()`ping two operand Expressions from the `operands` stack, and
-     * `push()`ing a new BinaryOperation representing the application of this operator on these
-     * operands onto the `operands` stack. Requires that `operators.peek()` is '+' or '*' and
-     * `operands` includes at least two elements.
+     * `operators` stack and `push()`ing the resulting Expression onto the `operands` stack. For
+     * the binary operators '+', '-', and '*', this `pop()`s two operand Expressions from the
+     * `operands` stack and `push()`es a new BinaryOperation representing the application of this
+     * operator on these operands. For the unary negation marker '~', this `pop()`s one operand
+     * Expression and `push()`es a new UnaryOperation representing its negation. Requires that
+     * `operators.peek()` is one of '+', '-', '*', or '~', that `operands` has at least two
+     * elements when the top operator is binary, and at least one element when the top operator
+     * is '~'.
      */
     private static void oneStepSimplify(Stack<Expression> operands, Stack<Character> operators) {
         char op = operators.pop();

@@ -272,4 +272,52 @@ public class ParserTest {
         expected = subExpr(negExpr(new Constant(5)), new Constant(2));
         assertEquals(expected, ExpressionParser.parse("-5-2"));
     }
+
+    @DisplayName("WHEN a variable is negated, THEN a UnaryOperation wrapping the Variable is returned.")
+    @Test
+    void testNegatedVariable() throws MalformedExpression {
+        // Negation of a single variable
+        Expression expected = negExpr(new Variable('x'));
+        assertEquals(expected, ExpressionParser.parse("-x"));
+
+        // Negated variable combined with a binary op: a + -b
+        expected = addExpr(new Variable('a'), negExpr(new Variable('b')));
+        assertEquals(expected, ExpressionParser.parse("a+-b"));
+
+        // Negated variable combined with multiplication: -x * y
+        expected = multExpr(negExpr(new Variable('x')), new Variable('y'));
+        assertEquals(expected, ExpressionParser.parse("-x*y"));
+    }
+
+    @DisplayName("WHEN a multi-digit constant is negated, THEN a UnaryOperation wrapping the whole Constant is returned.")
+    @Test
+    void testNegatedMultiDigitConstant() throws MalformedExpression {
+        // Simple negated multi-digit constant
+        Expression expected = negExpr(new Constant(12));
+        assertEquals(expected, ExpressionParser.parse("-12"));
+
+        // Larger value
+        expected = negExpr(new Constant(2110));
+        assertEquals(expected, ExpressionParser.parse("-2110"));
+
+        // Negated multi-digit constant combined with addition
+        expected = addExpr(new Constant(3), negExpr(new Constant(45)));
+        assertEquals(expected, ExpressionParser.parse("3+-45"));
+    }
+
+    @DisplayName("WHEN negation is combined with parentheses and binary ops, THEN the AST is built correctly.")
+    @Test
+    void testNegationWithParentheses() throws MalformedExpression {
+        // Negation inside parentheses: (-3+4) should be ((-3) + 4)
+        Expression expected = addExpr(negExpr(new Constant(3)), new Constant(4));
+        assertEquals(expected, ExpressionParser.parse("(-3+4)"));
+
+        // Negation of a parenthesized sum following a binary op: 5 + -(3+2)
+        expected = addExpr(new Constant(5), negExpr(addExpr(new Constant(3), new Constant(2))));
+        assertEquals(expected, ExpressionParser.parse("5+-(3+2)"));
+
+        // Negation of a parenthesized sub-expression following multiplication: 2 * -(a+b)
+        expected = multExpr(new Constant(2), negExpr(addExpr(new Variable('a'), new Variable('b'))));
+        assertEquals(expected, ExpressionParser.parse("2*-(a+b)"));
+    }
 }

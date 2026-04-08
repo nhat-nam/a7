@@ -1,5 +1,6 @@
 package cs2110.ast;
 
+import cs2110.ExpressionParser;
 import java.util.function.BiFunction;
 
 /**
@@ -21,32 +22,102 @@ public record BinaryOperation(Expression left, Expression right, char symbol,
                 this.right.infixString() + ")";
     }
 
+    /**
+     * Recursively evaluates the left and right children and applies this BinaryOperation's
+     * stored `op` BiFunction to their int results. Throws UnassignedVariable if either child
+     * contains any Variable.
+     */
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        int leftVal = left.evaluate();
+        int rightVal = right.evaluate();
+        return op.apply(leftVal, rightVal);
     }
 
+    /**
+     * Returns a new BinaryOperation in which every occurrence of the given `variable` has been
+     * replaced by `expr` in both the left and right subtrees. The symbol and op are preserved.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression newLeft = left.substitute(variable, expr);
+        Expression newRight = right.substitute(variable, expr);
+        return new BinaryOperation(newLeft, newRight, symbol, op);
     }
 
+    /**
+     * Recursively simplifies both children. If the resulting BinaryOperation contains no
+     * Variables (i.e., it is purely constant), folds it into a single Constant holding the
+     * evaluated value. Otherwise returns a new BinaryOperation composed of the simplified
+     * children. Uses `evaluate()` and catches UnassignedVariable to detect the fully-constant
+     * case polymorphically without any dynamic type queries.
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression leftS = left.simplify();
+        Expression rightS = right.simplify();
+        BinaryOperation candidate = new BinaryOperation(leftS, rightS, symbol, op);
+        try {
+            return new Constant(candidate.evaluate());
+        } catch (UnassignedVariable e) {
+            return candidate;
+        }
     }
 
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to this BinaryOperation.
+     * For `+` and `-`, recursively expands each child and rebuilds. For `*`, recursively
+     * expands each child and then applies the distributive property via `multTimes`, giving
+     * precedence to right distributivity (distributing the left operand first if it is a sum
+     * or difference). Requires that this tree contains no UnaryOperations and only `+`, `-`,
+     * and `*` BinaryOperations.
+     */
     @Override
     public Expression expand() {
-        // TODO 4.4: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression leftE = left.expand();
+        Expression rightE = right.expand();
+        if (symbol == '*') {
+            return leftE.multTimes(rightE);
+        }
+        return new BinaryOperation(leftE, rightE, symbol, op);
+    }
+
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to `this * other`. If this
+     * BinaryOperation is a sum or difference (`+` or `-`), distributes the multiplication over
+     * its children (right distributivity): `(a OP b) * other = (a * other) OP (b * other)`,
+     * recursively applying `multTimes` to handle any further distribution. Otherwise (this is
+     * `*`), delegates to `other.distributeFromLeft(this)` so that left distributivity may
+     * occur on the right operand. Requires that `this` and `other` are already expanded.
+     */
+    @Override
+    public Expression multTimes(Expression other) {
+        if (symbol == '+' || symbol == '-') {
+            // Right distributivity: distribute this sum/difference first.
+            Expression newLeft = left.multTimes(other);
+            Expression newRight = right.multTimes(other);
+            return new BinaryOperation(newLeft, newRight, symbol, op);
+        }
+        // this is '*' — not a sum/diff, so try left distributivity on the right operand.
+        return other.distributeFromLeft(this);
+    }
+
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to `other * this`. If this
+     * BinaryOperation is a sum or difference, distributes the multiplication over its children
+     * (left distributivity): `other * (c OP d) = (other * c) OP (other * d)`, recursively
+     * applying `multTimes` to handle any further distribution. Otherwise (this is `*`), returns
+     * a plain BinaryOperation `other * this`. Requires that `this` and `other` are already
+     * expanded.
+     */
+    @Override
+    public Expression distributeFromLeft(Expression other) {
+        if (symbol == '+' || symbol == '-') {
+            Expression newLeft = other.multTimes(left);
+            Expression newRight = other.multTimes(right);
+            return new BinaryOperation(newLeft, newRight, symbol, op);
+        }
+        return new BinaryOperation(other, this, '*', ExpressionParser.MULTIPLICATION);
     }
 
     @Override

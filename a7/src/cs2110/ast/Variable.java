@@ -1,5 +1,7 @@
 package cs2110.ast;
 
+import cs2110.ExpressionParser;
+
 /**
  * An expression representing a variable with a given name.
  */
@@ -22,25 +24,34 @@ public record Variable(char name) implements Expression {
         return String.valueOf(this.name);
     }
 
+    /**
+     * Always throws UnassignedVariable because a Variable has no fixed int value; it must first
+     * be substituted before it can be evaluated.
+     */
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        throw new UnassignedVariable();
     }
 
+    /**
+     * Returns `expr` if this Variable's name equals `variable`, otherwise returns this Variable
+     * unchanged.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        if (this.name == variable) {
+            return expr;
+        }
+        return this;
     }
 
+    /**
+     * Returns this Variable unchanged, since a Variable cannot be simplified further without
+     * knowing its value.
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        return this;
     }
 
     /**
@@ -49,6 +60,25 @@ public record Variable(char name) implements Expression {
     @Override
     public Expression expand() {
         return this;
+    }
+
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to `this * other`. Since a
+     * Variable is not a sum or difference, this delegates to `other.distributeFromLeft(this)` so
+     * that any distribution can occur on the right operand.
+     */
+    @Override
+    public Expression multTimes(Expression other) {
+        return other.distributeFromLeft(this);
+    }
+
+    /**
+     * Returns a new BinaryOperation representing `other * this`. Since a Variable is not a sum
+     * or difference, no distribution occurs.
+     */
+    @Override
+    public Expression distributeFromLeft(Expression other) {
+        return new BinaryOperation(other, this, '*', ExpressionParser.MULTIPLICATION);
     }
 
     @Override

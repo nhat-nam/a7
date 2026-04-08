@@ -38,6 +38,25 @@ public interface Expression {
     Expression expand();
 
     /**
+     * Returns a fully-expanded Expression mathematically equivalent to `this * other`. If `this`
+     * is a sum or difference (`+` or `-`), the multiplication is distributed over its children
+     * first (right distributivity). Otherwise, distribution into `other` is attempted (left
+     * distributivity). Requires that both `this` and `other` are already in fully-expanded form
+     * and contain no UnaryOperations.
+     */
+    Expression multTimes(Expression other);
+
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to `other * this`. If `this`
+     * is a sum or difference (`+` or `-`), the multiplication is distributed over its children.
+     * Otherwise, returns a plain BinaryOperation representing `other * this`. This helper is
+     * dispatched on the right operand of a multiplication after the left operand has been
+     * determined not to be a sum or difference. Requires that both `this` and `other` are
+     * already in fully-expanded form and contain no UnaryOperations.
+     */
+    Expression distributeFromLeft(Expression other);
+
+    /**
      * Returns a String representation of the tree structure of this expression.
      */
     default String treeString() {

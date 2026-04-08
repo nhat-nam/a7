@@ -1,5 +1,6 @@
 package cs2110.ast;
 
+import cs2110.ExpressionParser;
 import java.util.function.Function;
 
 /**
@@ -19,25 +20,40 @@ public record UnaryOperation(Expression arg, char symbol, Function<Integer, Inte
         return this.symbol + arg.infixString();
     }
 
+    /**
+     * Recursively evaluates the operand and applies this UnaryOperation's stored `op` Function
+     * to its int result. Throws UnassignedVariable if the operand contains any Variable.
+     */
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        int argVal = arg.evaluate();
+        return op.apply(argVal);
     }
 
+    /**
+     * Returns a new UnaryOperation in which every occurrence of the given `variable` has been
+     * replaced by `expr` in the operand. The symbol and op are preserved.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression newArg = arg.substitute(variable, expr);
+        return new UnaryOperation(newArg, symbol, op);
     }
 
+    /**
+     * Recursively simplifies the operand. If the resulting UnaryOperation contains no
+     * Variables, folds it into a single Constant holding the evaluated value. Otherwise
+     * returns a new UnaryOperation composed of the simplified operand.
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression argS = arg.simplify();
+        UnaryOperation candidate = new UnaryOperation(argS, symbol, op);
+        try {
+            return new Constant(candidate.evaluate());
+        } catch (UnassignedVariable e) {
+            return candidate;
+        }
     }
 
     /**
@@ -49,6 +65,27 @@ public record UnaryOperation(Expression arg, char symbol, Function<Integer, Inte
     @Override
     public Expression expand() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns a fully-expanded Expression mathematically equivalent to `this * other`. Since
+     * expand()'s precondition excludes UnaryOperations, this is provided only to satisfy the
+     * Expression interface. Delegates to `other.distributeFromLeft(this)` to allow any
+     * distribution on the right operand; treats this UnaryOperation itself as a non-sum/diff.
+     */
+    @Override
+    public Expression multTimes(Expression other) {
+        return other.distributeFromLeft(this);
+    }
+
+    /**
+     * Returns a new BinaryOperation representing `other * this`. Provided only to satisfy the
+     * Expression interface; not expected to be invoked since expand()'s precondition excludes
+     * UnaryOperations.
+     */
+    @Override
+    public Expression distributeFromLeft(Expression other) {
+        return new BinaryOperation(other, this, '*', ExpressionParser.MULTIPLICATION);
     }
 
     @Override
