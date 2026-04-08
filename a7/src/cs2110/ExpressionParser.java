@@ -169,7 +169,7 @@ public class ExpressionParser {
         char op = operators.pop();
 
         if (op == '~') {
-            // 3.7: Unary Negation mapped to our internal '~' symbol
+            // Unary Negation mapped to our internal '~' symbol
             Expression o1 = operands.pop();
             operands.push(new UnaryOperation(o1, '-', NEGATION));
         } else {
@@ -180,7 +180,7 @@ public class ExpressionParser {
             if (op == '+') {
                 operands.push(new BinaryOperation(o1, o2, '+', ADDITION));
             } else if (op == '-') {
-                // 3.6: Binary Subtraction
+                // Binary Subtraction
                 operands.push(new BinaryOperation(o1, o2, '-', SUBTRACTION));
             } else if (op == '*') {
                 operands.push(new BinaryOperation(o1, o2, '*', MULTIPLICATION));

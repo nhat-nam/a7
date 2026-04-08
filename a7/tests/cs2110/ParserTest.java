@@ -96,13 +96,6 @@ public class ParserTest {
         assertEquals(expected, actual);
     }
 
-    /*
-     * TODO 3.2B-3.7B: Add additional tests to this method to improve coverage of the starter
-     *  version features (correct handling of parentheses, addition, and multiplication)
-     *  and provide full coverage of the features that you added (exception handling,
-     *  variables, multi-digit constants, whitespace handling, subtraction, and negation).
-     */
-
     //3.2
     @DisplayName("WHEN an expression is empty or essentially empty, THEN parse() throws MalformedExpression.")
     @Test
@@ -245,8 +238,8 @@ public class ParserTest {
     @Test
     void testUnaryNegation() throws MalformedExpression {
         // Basic negation
-        Expression expected = negExpr(new Constant(5));
-        assertEquals(expected, ExpressionParser.parse("-5"));
+        Expression expected = negExpr(new Constant(52));
+        assertEquals(expected, ExpressionParser.parse("-52"));
 
         // Negation of parentheses
         expected = negExpr(addExpr(new Constant(2), new Constant(3)));

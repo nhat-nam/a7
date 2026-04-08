@@ -19,25 +19,48 @@ public record UnaryOperation(Expression arg, char symbol, Function<Integer, Inte
         return this.symbol + arg.infixString();
     }
 
+    /**
+     * Evaluates the expression of this unary operation before applying negation and returning
+     * the resulting integer. If met with unary operations, this method is called recursively.
+     */
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        int evaluatedOperand = this.arg.evaluate();
+        return this.op.apply(evaluatedOperand);
     }
 
+    /**
+     * Returns a new Expression where all occurrences of the target variable
+     * have been replaced with the replacement Expression.
+     * In this case, return a new UnaryOperation with arg being substituted
+     * appropriately as mentioned above.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression substituted = this.arg.substitute(variable, expr);
+        return new UnaryOperation(substituted, this.symbol, this.op);
     }
 
+    /**
+     * Returns a simplified version of this unary operation.
+     * It first simplifies its operand. If the resulting expression can be fully evaluated
+     * (contains no variables), it folds it into a new Constant.
+     * Otherwise, it returns a new UnaryOperation containing the simplified operand.
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3D: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        //we simplify using the same recursive logic in substitute()
+        Expression simplifiedOperand = this.arg.simplify();
+        Expression simplifiedNode = new UnaryOperation(simplifiedOperand, this.symbol, this.op);
+
+        //then we try to evaluate it in case constant folding works. if not, we catch exception thrown
+        //when encountering variable and return the simplified node
+        try {
+            int evaluated = simplifiedNode.evaluate();
+            return new Constant(evaluated);
+        } catch (UnassignedVariable e) {
+            return simplifiedNode;
+        }
     }
 
     /**

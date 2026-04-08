@@ -22,25 +22,32 @@ public record Variable(char name) implements Expression {
         return String.valueOf(this.name);
     }
 
+    /**
+     * Variables do not have an inherent numerical value, so they cannot be directly evaluated.
+     * This method will throw an UnassignedVariable exception.
+     */
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        throw new UnassignedVariable();
     }
 
+    /**
+     * If the target variable matches this Variable, then return expr. Otherwise, return the Variable itself.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        if(variable==this.name){
+            return expr;
+        }
+        return this;
     }
 
+    /**
+     * A Variable can be simplified no further and will just return itself
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3B: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        return this;
     }
 
     /**

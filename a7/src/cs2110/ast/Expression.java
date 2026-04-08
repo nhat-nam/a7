@@ -19,7 +19,7 @@ public interface Expression {
 
     /**
      * Returns the Expression that results when every instance of the given `variable` is replaced
-     * with the given `expr`ession.
+     * with the given expression.
      */
     Expression substitute(char variable, Expression expr);
 

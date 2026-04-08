@@ -23,23 +23,37 @@ public record BinaryOperation(Expression left, Expression right, char symbol,
 
     @Override
     public int evaluate() throws UnassignedVariable {
-        // TODO 4.1C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        int evaluatedLeftOperand = this.left.evaluate();
+        int evaluatedRightOperand = this.right.evaluate();
+        return this.op.apply(evaluatedLeftOperand,evaluatedRightOperand);
     }
 
+    /**
+     * Returns a new Expression where all occurrences of the target variable
+     * have been replaced with the replacement Expression.
+     * In this case, return a new BinaryOperation with both left and right expressions being
+     * substituted appropriately as mentioned above.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        Expression substitutedLeft = this.left.substitute(variable, expr);
+        Expression substitutedRight = this.right.substitute(variable, expr);
+        return new BinaryOperation(substitutedLeft, substitutedRight, this.symbol, this.op);
     }
 
     @Override
     public Expression simplify() {
-        // TODO 4.3C: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        //same recursive logic as substitute()
+        Expression simplifiedLeft = this.left.simplify();
+        Expression simplifiedRight = this.right.simplify();
+        Expression simplifiedNode = new BinaryOperation(simplifiedLeft, simplifiedRight, this.symbol, this.op);
+
+        //then try to evaluate (constant folding). return a constant if work, and the simplified node if not.
+        try {
+            return new Constant(simplifiedNode.evaluate());
+        } catch (UnassignedVariable e) {
+            return simplifiedNode;
+        }
     }
 
     @Override

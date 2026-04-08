@@ -13,25 +13,29 @@ public record Constant(int value) implements Expression {
         return String.valueOf(this.value);
     }
 
+    /**
+     * Returns the integer value of this constant expression.
+     */
     @Override
     public int evaluate() {
-        // TODO 4.1A: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        return this.value;
     }
 
+    /**
+     * A constant is not a variable and therefore cannot be substituted.
+     * When called, just returns the Constant itself.
+     */
     @Override
     public Expression substitute(char variable, Expression expr) {
-        // TODO 4.2A: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        return this;
     }
 
+    /**
+     * A Constant can be simplified no further and will just return itself
+     */
     @Override
     public Expression simplify() {
-        // TODO 4.3A: Complete the definition of this method. Add a Javadoc comment to this method
-        //  that refines its specifications.
-        throw new UnsupportedOperationException();
+        return this;
     }
 
     /**
