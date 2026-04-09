@@ -121,6 +121,17 @@ public class ExpressionTest {
         assertEquals(expected, actual);
     }
 
+    @DisplayName("WHEN evaluate() is called on a left-associated chain of subtractions, "
+            + "THEN the returned int reflects left-to-right evaluation.")
+    @Test
+    void testEvaluateNestedSubtraction() throws UnassignedVariable {
+        Expression e = subtractExpr(subtractExpr(new Constant(10), new Constant(5)),
+                new Constant(2));
+        int expected = 3;
+        int actual = e.evaluate();
+        assertEquals(expected, actual);
+    }
+
     @DisplayName("WHEN evaluate() is called on a BinaryOperation combining addition and "
             + "multiplication, THEN the returned int reflects the correct combined value.")
     @Test
@@ -365,6 +376,18 @@ public class ExpressionTest {
         assertEquals(expected, actual);
     }
 
+    @DisplayName("WHEN substitute() is called on a Variable with a replacement Expression that "
+            + "itself contains the same Variable, THEN the replacement subtree is returned "
+            + "verbatim without further substitution into it.")
+    @Test
+    void testSubstituteReplacementContainsTarget() {
+        Expression e = new Variable('x');
+        Expression replacement = addExpr(new Variable('x'), new Constant(1));
+        Expression expected = addExpr(new Variable('x'), new Constant(1));
+        Expression actual = e.substitute('x', replacement);
+        assertEquals(expected, actual);
+    }
+
     /* *********************************************************************************
      * Tests for simplify()                                                            *
      ***********************************************************************************/
@@ -535,6 +558,18 @@ public class ExpressionTest {
     void testSimplifyUnaryOverNonConstant() {
         Expression e = negExpr(addExpr(new Variable('x'), addExpr(new Constant(1), new Constant(2))));
         Expression expected = negExpr(addExpr(new Variable('x'), new Constant(3)));
+        Expression actual = e.simplify();
+        assertEquals(expected, actual);
+    }
+
+    @DisplayName("WHEN simplify() is called on a tree containing a fully-foldable UnaryOperation "
+            + "sub-expression nested inside a larger non-foldable tree, THEN the UnaryOperation "
+            + "folds to a Constant while the enclosing non-foldable structure is preserved.")
+    @Test
+    void testSimplifyUnaryFoldsInsideLargerTree() {
+        Expression e = addExpr(negExpr(addExpr(new Constant(2), new Constant(3))),
+                new Variable('x'));
+        Expression expected = addExpr(new Constant(-5), new Variable('x'));
         Expression actual = e.simplify();
         assertEquals(expected, actual);
     }

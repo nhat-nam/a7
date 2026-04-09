@@ -87,6 +87,15 @@ public class ParserTest {
         assertEquals(expected, actual);
     }
 
+    @DisplayName("WHEN we parse an expression containing multiple multiplications in sequence, "
+            + "THEN the result is parsed left-associatively.")
+    @Test
+    void testMultiplicationLeftAssoc() throws MalformedExpression {
+        Expression expected = multExpr(multExpr(new Constant(2), new Constant(3)), new Constant(4));
+        Expression actual = ExpressionParser.parse("2*3*4");
+        assertEquals(expected, actual);
+    }
+
     @DisplayName("WHEN we parse the expression \"2*(3+4)\", THEN the addition BinaryOperation "
             + "appears the right operand of the multiplication BinaryOperation.")
     @Test
@@ -94,6 +103,26 @@ public class ParserTest {
         Expression expected = multExpr(new Constant(2), addExpr(new Constant(3), new Constant(4)));
         Expression actual = ExpressionParser.parse("2*(3+4)");
         assertEquals(expected, actual);
+    }
+
+    @DisplayName("WHEN a single operand is wrapped in parentheses, THEN parse() returns the "
+            + "underlying operand unchanged.")
+    @Test
+    void testParenthesizedSingleOperand() throws MalformedExpression {
+        Expression expected = new Constant(5);
+        assertEquals(expected, ExpressionParser.parse("(5)"));
+
+        expected = new Variable('x');
+        assertEquals(expected, ExpressionParser.parse("(x)"));
+    }
+
+    @DisplayName("WHEN an expression is wrapped in multiple redundant parentheses, THEN the extra "
+            + "parentheses are discarded and the inner expression is returned.")
+    @Test
+    void testNestedRedundantParens() throws MalformedExpression {
+        Expression expected = addExpr(new Constant(1), new Constant(2));
+        assertEquals(expected, ExpressionParser.parse("((1+2))"));
+        assertEquals(expected, ExpressionParser.parse("(((1+2)))"));
     }
 
     /*
@@ -135,6 +164,14 @@ public class ParserTest {
         // Extra opening parenthesis
         assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("(1+2"));
         assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("((1*2)+3"));
+    }
+
+    @DisplayName("WHEN an expression contains empty parentheses, THEN parse() throws MalformedExpression.")
+    @Test
+    void testEmptyParens() {
+        assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("()"));
+        assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("(())"));
+        assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("1+()"));
     }
 
     @DisplayName("WHEN an operator is provided where an operand was expected, THEN parse() throws MalformedExpression")
@@ -189,6 +226,17 @@ public class ParserTest {
     void testMultiCharVariable() {
         assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("xy"));
         assertThrows(MalformedExpression.class, () -> ExpressionParser.parse("a+bc"));
+    }
+
+    @DisplayName("WHEN we parse an expression multiplying two variables, THEN a BinaryOperation "
+            + "is returned with both operands as Variables.")
+    @Test
+    void testVariableTimesVariable() throws MalformedExpression {
+        Expression expected = multExpr(new Variable('x'), new Variable('y'));
+        assertEquals(expected, ExpressionParser.parse("x*y"));
+
+        expected = addExpr(multExpr(new Variable('a'), new Variable('b')), new Variable('c'));
+        assertEquals(expected, ExpressionParser.parse("a*b+c"));
     }
 
     //3.4
